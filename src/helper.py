@@ -1,7 +1,7 @@
-from langchain.document_loaders import TextLoader, PyPDFLoader, DirectoryLoader
-from langchain.text_splitter import CharacterTextSplitter,RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import TextLoader, PyPDFLoader, DirectoryLoader
+from langchain.text_splitter import CharacterTextSplitter, RecursiveCharacterTextSplitter
 from langchain.schema import Document
-from langchain.embeddings import HuggingFaceBgeEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 # NEW: history imports (as requested)
 from langchain_community.chat_message_histories import ChatMessageHistory  # in-memory impl
 from langchain_core.chat_history import BaseChatMessageHistory              # interface
@@ -58,7 +58,7 @@ def create_chunks(trimmed_extracted_doc):
 
 def embed_chunks():
     model_name="sentence-transformers/all-MiniLM-L6-v2"
-    embeddings=HuggingFaceBgeEmbeddings(model_name=model_name)
+    embeddings=HuggingFaceEmbeddings(model_name=model_name)
     return embeddings
 
 store={}
