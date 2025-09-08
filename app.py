@@ -72,14 +72,17 @@ def index():
 
 @app.route("/get",methods=["GET","POST"])
 def chat():
-    sid = "demo-001"
-    msg=request.form["msg"]
-    input=msg
-    print(input)
-    respone=conversational_rag_chain.invoke({"input":msg},
-    config={"configurable": {"session_id": sid}})
-    print("Response:",respone.get('answer'))
-    return str(respone['answer'])
+    # Use a unique session ID per browser tab (or use a default one)
+    sid = request.form.get("session_id", "demo-001") #here the session_id is main if not then fall back to demo-001
+    msg = request.form["msg"]
+    print(f"Session: {sid}, Input: {msg}")
+    
+    response = conversational_rag_chain.invoke(
+        {"input": msg},
+        config={"configurable": {"session_id": sid}}
+    )
+    print(f"Response: {response.get('answer')}")
+    return str(response.get('answer', 'Sorry, I could not process your request.'))
 
 
 

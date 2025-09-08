@@ -77,9 +77,37 @@
     <script>
         let messageHistory = [];
         
+        // Load chat history from session storage on page load
+        function loadChatHistory() {
+            const savedHistory = sessionStorage.getItem('chatHistory');
+            if (savedHistory) {
+                messageHistory = JSON.parse(savedHistory);
+                // Restore chat messages on screen
+                const messagesContainer = document.getElementById('chatMessages');
+                messagesContainer.innerHTML = ''; // Clear welcome message
+                
+                messageHistory.forEach(msg => {
+                    addMessageToScreen(msg.text, msg.sender, msg.time);
+                });
+            }
+        }
+        
+        // Save chat history to session storage
+        function saveChatHistory() {
+            // Keep only last 20 Q&A pairs (40 messages)
+            if (messageHistory.length > 40) {
+                messageHistory = messageHistory.slice(-40);
+            }
+            sessionStorage.setItem('chatHistory', JSON.stringify(messageHistory));
+        }
+        
         // Initialize chat
         window.onload = function() {
-            document.getElementById('welcomeTime').textContent = getCurrentTime();
+            loadChatHistory(); // Load saved chat from session storage
+            if (messageHistory.length === 0) {
+                // Show welcome message only if no chat history
+                document.getElementById('welcomeTime').textContent = getCurrentTime();
+            }
             adjustTextareaHeight();
         };
 
@@ -100,6 +128,13 @@
             textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
         }
 
+        // Generate unique session ID for this browser tab
+        let sessionId = sessionStorage.getItem('sessionId');
+        if (!sessionId) {
+            sessionId = 'session-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            sessionStorage.setItem('sessionId', sessionId);
+        }
+        
         // Send message function
         async function sendMessage() {
             const input = document.getElementById('messageInput');
@@ -126,6 +161,7 @@
                 // Create form data to send to Flask backend
                 const formData = new FormData();
                 formData.append('msg', message);
+                formData.append('session_id', sessionId);  // Send unique session ID
 
                 // Send request to Flask backend
                 const response = await fetch('/get', {
@@ -153,9 +189,26 @@
 
         // Add message to chat
         function addMessage(text, sender) {
+            const currentTime = getCurrentTime();
+            
+            // Add to screen
+            addMessageToScreen(text, sender, currentTime);
+            
+            // Store in history and session storage
+            messageHistory.push({
+                text: text,
+                sender: sender,
+                time: currentTime
+            });
+            
+            // Save to session storage
+            saveChatHistory();
+        }
+        
+        // Helper function to add message to screen
+        function addMessageToScreen(text, sender, currentTime) {
             const messagesContainer = document.getElementById('chatMessages');
             const messageDiv = document.createElement('div');
-            const currentTime = getCurrentTime();
             
             messageDiv.className = `message ${sender}-message`;
             
@@ -191,13 +244,6 @@
             
             messagesContainer.appendChild(messageDiv);
             
-            // Store in history
-            messageHistory.push({
-                text: text,
-                sender: sender,
-                time: currentTime
-            });
-            
             // Scroll to bottom
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
@@ -227,7 +273,7 @@
                     </div>
                     <div class="message-content">
                         <div class="message-bubble">
-                        <p>Hello! I'm your RAG-powered AI assistant. I can answer questions based on the knowledge base. How can I help you today?</p>
+                            <p>Hello! I'm your RAG-powered AI assistant. I can answer questions based on the knowledge base. How can I help you today?</p>
                         </div>
                         <div class="message-time">
                             <span>${getCurrentTime()}</span>
@@ -236,6 +282,8 @@
                 </div>
             `;
             messageHistory = [];
+            // Clear session storage
+            sessionStorage.removeItem('chatHistory');
         }
 
         // Get current time

@@ -62,10 +62,19 @@ def embed_chunks():
     return embeddings
 
 store={}
+
 def get_session_history(session_id: str) -> BaseChatMessageHistory:
     """Get the chat history for a given session ID, creating it if necessary."""
     if session_id not in store:
         store[session_id] = ChatMessageHistory()
-    return store[session_id]
+    
+    # Get the history
+    history = store[session_id]
+    
+    # Keep only last 40 messages (20 Q&A pairs)
+    if len(history.messages) > 40:
+        history.messages = history.messages[-40:]  # Keep last 40 messages
+    
+    return history
 
 
